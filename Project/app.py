@@ -14,8 +14,8 @@ DEVICES = {}
 
 # Paths to models
 MODEL_PATHS = {
-    'EfficientNetV2B0': os.path.join('models', 'efficientnetv2b0.pth'),
-    'MobileNetV2': os.path.join('models', 'mobilenetv2.pth')
+    'EfficientNetV2B0': os.path.join('models', 'EfficientNetV2B0_digit.pth'),
+    'MobileNetV2': os.path.join('models', 'MobileNetV2_digit.pth')
 }
 
 def load_models_on_startup():
