@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Handwritten CAPTCHA</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        
+        <header>
+            <h1 class="gradient-text">Neural CAPTCHA</h1>
+            <p class="subtitle">Prove your humanity by drawing the target digit</p>
+        </header>
+
+        <main class="glass-panel">
+            <div class="captcha-header">
+                <div class="target-display">
+                    <span>Target Digit:</span>
+                    <h2 id="captcha-target" class="glow-digit">?</h2>
+                </div>
+                <button id="regenerate-btn" class="icon-btn" title="Get new digit">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
+            </div>
+
+            <div class="model-selection">
+                <label for="model-select">Select AI Model:</label>
+                <div class="custom-select">
+                    <select id="model-select">
+                        <option value="MobileNetV2" selected>MobileNetV2 (Fast)</option>
+                        <option value="EfficientNetV2B0">EfficientNetV2B0 (Accurate)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="drawing-canvas" width="280" height="280"></canvas>
+                <div class="canvas-placeholder" id="canvas-placeholder">Draw here...</div>
+            </div>
+
+            <div class="controls">
+                <button id="clear-btn" class="btn secondary">Clear Canvas</button>
+                <button id="submit-btn" class="btn primary">
+                    <span class="btn-text">Verify Identity</span>
+                    <span class="loader hidden"></span>
+                </button>
+            </div>
+
+            <div id="result-box" class="result-box hidden">
+                <div class="result-icon" id="result-icon"></div>
+                <div class="result-details">
+                    <h3 id="result-message">Waiting...</h3>
+                    <div class="metrics">
+                        <div class="metric">
+                            <span class="label">Predicted</span>
+                            <span class="value" id="pred-digit">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Confidence</span>
+                            <span class="value" id="pred-conf">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by PyTorch • Phase 2 Implementation</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
