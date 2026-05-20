@@ -1,0 +1,32 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.idea/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Model Checkpoints and Outputs
+saved_models/
+digit_model_training/saved_models/
+logs/
+digit_model_training/logs/
+graphs/
+digit_model_training/graphs/
+reports/
+digit_model_training/reports/
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
