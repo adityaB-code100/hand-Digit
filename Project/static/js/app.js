@@ -98,7 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
             targetDigitEl.classList.remove('glow-digit');
             targetDigitEl.style.opacity = '0.5';
             
-            const response = await fetch('/api/captcha');
+            const selectedModel = modelSelect.value;
+            const response = await fetch(`/api/captcha?model=${encodeURIComponent(selectedModel)}`);
             const data = await response.json();
             
             if (data.status === 'success') {
@@ -185,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearBtn.addEventListener('click', initCanvas);
     submitBtn.addEventListener('click', submitCaptcha);
     regenBtn.addEventListener('click', fetchCaptcha);
+    modelSelect.addEventListener('change', fetchCaptcha);
 
     // Initial load
     initCanvas();

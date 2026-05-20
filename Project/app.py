@@ -1,9 +1,9 @@
 import os
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from utils.predict import load_prediction_model, predict_digit
+from utils.predict import load_prediction_model, predict_digit, predict_character
 from utils.preprocess import base64_to_tensor
-from utils.captcha_generator import generate_captcha_digit
+from utils.captcha_generator import generate_captcha_character
 
 app = Flask(__name__)
 CORS(app)
@@ -41,11 +41,21 @@ def home():
 
 @app.route('/api/captcha', methods=['GET'])
 def get_captcha():
-    """Returns a new random CAPTCHA digit."""
-    digit = generate_captcha_digit()
+    """Returns a new random CAPTCHA character based on the selected model's classes."""
+    model_name = request.args.get('model', 'MobileNetV2')
+    
+    # Determine if the selected model is 62-class
+    is_alphanumeric = False
+    if model_name in MODELS:
+        model = MODELS[model_name]
+        if getattr(model, 'num_classes', 10) == 62:
+            is_alphanumeric = True
+            
+    # Generate character
+    char = generate_captcha_character(alphanumeric=is_alphanumeric)
     return jsonify({
         'status': 'success',
-        'captcha_digit': digit
+        'captcha_digit': char
     })
 
 @app.route('/api/predict', methods=['POST'])
@@ -60,7 +70,7 @@ def predict():
         return jsonify({'status': 'error', 'message': 'Invalid input data'}), 400
         
     base64_image = data['image']
-    target_digit = int(data['target_digit'])
+    target_digit = str(data['target_digit'])
     model_name = data['model_name']
     
     # Check if image is blank/empty based on length
@@ -78,13 +88,17 @@ def predict():
         # Target size for EfficientNet/MobileNetV2 training was 64x64
         tensor = base64_to_tensor(base64_image, target_size=(64, 64))
         
-        # 2. Predict
-        predicted_digit, confidence = predict_digit(model, device, tensor)
+        # 2. Predict & Verify
+        if getattr(model, 'num_classes', 10) == 62:
+            predicted_idx, predicted_char, confidence = predict_character(model, device, tensor)
+            predicted_display = predicted_char
+            is_verified = (str(predicted_char) == target_digit)
+        else:
+            predicted_digit, confidence = predict_digit(model, device, tensor)
+            predicted_display = str(predicted_digit)
+            is_verified = (predicted_display == target_digit)
         
-        # 3. Verification logic
-        is_verified = (predicted_digit == target_digit)
-        
-        # 4. Reject low confidence
+        # 3. Reject low confidence
         if confidence < 0.4:
             is_verified = False
             message = "Confidence too low, please draw more clearly."
@@ -93,7 +107,7 @@ def predict():
 
         return jsonify({
             'status': 'success',
-            'predicted_digit': predicted_digit,
+            'predicted_digit': predicted_display,
             'confidence': confidence,
             'is_verified': is_verified,
             'message': message
