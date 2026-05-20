@@ -5,19 +5,39 @@ import cv2
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-def load_dataset(dataset_path):
+def load_dataset(dataset_path, load_full_characters=False):
     """
     Scans the dataset folder, verifies images, and extracts paths and labels.
+    Supports either digit-only (10 classes) or full alphanumeric (62 classes) mode.
     """
     if not os.path.exists(dataset_path):
         raise FileNotFoundError(f"Dataset path {dataset_path} does not exist.")
 
     image_paths = []
     labels = []
-    classes = [str(i) for i in range(10)]
-    class_to_idx = {f"digit_{c}": int(c) for c in classes}
     
-    print(f"Scanning dataset in: {dataset_path}")
+    # Auto-detect folder style (character_0 vs digit_0)
+    character_style_exists = os.path.exists(os.path.join(dataset_path, "character_0"))
+    
+    if character_style_exists:
+        if load_full_characters:
+            # Full 62 classes: digits (0-9), uppercase (10-35), lowercase (36-61)
+            class_to_idx = {}
+            for i in range(10):
+                class_to_idx[f"character_{i}"] = i
+            for c in range(ord('A'), ord('Z') + 1):
+                class_to_idx[f"{chr(c)}_caps"] = 10 + (c - ord('A'))
+            for c in range(ord('a'), ord('z') + 1):
+                class_to_idx[f"character_{chr(c)}"] = 36 + (c - ord('a'))
+        else:
+            # Digits only (10 classes)
+            class_to_idx = {f"character_{i}": i for i in range(10)}
+    else:
+        # Hand digit style: digit_0 to digit_9
+        class_to_idx = {f"digit_{i}": i for i in range(10)}
+        
+    print(f"Scanning dataset in: {dataset_path} (Alphanumeric: {load_full_characters})")
+    print(f"Class-to-Index mapping holds {len(class_to_idx)} classes.")
     
     corrupted_files = 0
     valid_files = 0
@@ -25,20 +45,20 @@ def load_dataset(dataset_path):
     for class_folder, idx in class_to_idx.items():
         folder_path = os.path.join(dataset_path, class_folder)
         if not os.path.exists(folder_path):
-            print(f"Warning: Folder {folder_path} not found.")
+            # If full characters are requested, some folders might be missing, so warning is fine
+            if not load_full_characters:
+                print(f"Warning: Folder {folder_path} not found.")
             continue
             
         extensions = ('*.jpg', '*.jpeg', '*.png')
         files = []
         for ext in extensions:
             files.extend(glob.glob(os.path.join(folder_path, ext)))
-            # Also check uppercase extensions
             files.extend(glob.glob(os.path.join(folder_path, ext.upper())))
             
         for file in files:
             # Check if file is valid image
             try:
-                # Use cv2 to just read the header to check if valid, without fully loading into memory
                 img = cv2.imread(file)
                 if img is None:
                     corrupted_files += 1

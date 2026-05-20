@@ -5,30 +5,23 @@ from torchvision import models
 
 def build_model(model_name='EfficientNetV2B0', num_classes=10):
     """
-    Builds the requested PyTorch model with a custom classification head.
+    Builds the requested PyTorch model (timm or torchvision) with a custom classification head
+    dynamically sized to num_classes.
     """
-    if model_name == 'EfficientNetV2B0':
-        # Using timm for the exact tf_efficientnetv2_b0 architecture
-        # pretrained=True downloads the ImageNet weights
-        model = timm.create_model('tf_efficientnetv2_b0', pretrained=True, num_classes=0)
-        
-        # Determine the number of features in the final layer
-        in_features = model.num_features
-        
-        # Create a custom classification head
-        model.classifier = nn.Sequential(
-            nn.Linear(in_features, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.4),
-            nn.Linear(512, num_classes)
-        )
-        
-    elif model_name == 'MobileNetV2':
+    # Normalize model names to support both custom and standard timm/torchvision names
+    mapping = {
+        'EfficientNetV2B0': 'tf_efficientnetv2_b0',
+        'EfficientNetV2B1': 'tf_efficientnetv2_b1',
+        'EfficientNetV2B2': 'tf_efficientnetv2_b2',
+        'EfficientNetV2B3': 'tf_efficientnetv2_b3',
+    }
+    
+    timm_model_name = mapping.get(model_name, model_name)
+    
+    if timm_model_name.lower() in ('mobilenetv2', 'mobilenet_v2'):
+        print(f"Building MobileNetV2 with num_classes={num_classes}")
         # Using torchvision for MobileNetV2
-        # Weights default to ImageNet (IMAGENET1K_V1/V2)
         model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
-        
         in_features = model.classifier[1].in_features
         
         # Replace the classifier
@@ -42,8 +35,33 @@ def build_model(model_name='EfficientNetV2B0', num_classes=10):
         )
         
     else:
-        raise ValueError(f"Model {model_name} not supported. Choose from EfficientNetV2B0, MobileNetV2.")
-        
+        print(f"Building timm model '{timm_model_name}' with num_classes={num_classes}")
+        try:
+            # Using timm for the exact architecture
+            model = timm.create_model(timm_model_name, pretrained=True, num_classes=0)
+            in_features = model.num_features
+            
+            # Create a custom classification head
+            model.classifier = nn.Sequential(
+                nn.Linear(in_features, 512),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
+                nn.Dropout(0.4),
+                nn.Linear(512, num_classes)
+            )
+        except Exception as e:
+            # Fallback to tf_efficientnetv2_b0 if build fails
+            print(f"Error building '{timm_model_name}' ({e}). Falling back to 'tf_efficientnetv2_b0'.")
+            model = timm.create_model('tf_efficientnetv2_b0', pretrained=True, num_classes=0)
+            in_features = model.num_features
+            model.classifier = nn.Sequential(
+                nn.Linear(in_features, 512),
+                nn.BatchNorm1d(512),
+                nn.ReLU(),
+                nn.Dropout(0.4),
+                nn.Linear(512, num_classes)
+            )
+            
     return model
 
 def setup_device():
